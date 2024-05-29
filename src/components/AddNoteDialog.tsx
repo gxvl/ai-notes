@@ -5,6 +5,8 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
+import LoadingButton from "./ui/loading-button";
+import { useRouter } from "next/navigation";
 
 interface AddNoteDialogProps {
     open: boolean,
@@ -13,12 +15,31 @@ interface AddNoteDialogProps {
 }
 
 export default function AddNoteDialog({ open, setOpen }: AddNoteDialogProps) {
+    const router = useRouter();
+
     const form = useForm<CreateNoteSchema>({
-        resolver: zodResolver(createNoteSchema)
+        resolver: zodResolver(createNoteSchema),
+        defaultValues: {
+            title: "",
+            content: "",
+        }
     })
 
     async function onSubmit(input: CreateNoteSchema) {
-        alert(input)
+        try {
+            const response = await fetch("/api/notes", {
+                method: "POST",
+                body: JSON.stringify(input)
+            })
+
+            if (!response.ok) throw Error("Status code: " + response.status)
+            form.reset();
+            router.refresh();
+            setOpen(false);
+        } catch (error) {
+            console.error(error); //TOASTIFY LATER
+            alert("Something went wrong. Please, try again!")
+        }
 
     }
 
@@ -26,7 +47,7 @@ export default function AddNoteDialog({ open, setOpen }: AddNoteDialogProps) {
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Add note</DialogTitle>
+                    <DialogTitle>Add Note</DialogTitle>
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
@@ -57,12 +78,16 @@ export default function AddNoteDialog({ open, setOpen }: AddNoteDialogProps) {
                             )}
                         />
                         <DialogFooter>
-
+                            <LoadingButton
+                                type="submit"
+                                loading={form.formState.isSubmitting}
+                            >
+                                Submit
+                            </LoadingButton>
                         </DialogFooter>
-
                     </form>
                 </Form>
             </DialogContent>
         </Dialog>
-    )
+    );
 }

@@ -20,7 +20,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang='en'>
-        <body>
+        <body className={inter.className}>
           <SignedIn>
           </SignedIn>
           {children}
